@@ -1,0 +1,155 @@
+import psycopg2
+def create_db():
+    with psycopg2.connect(database="my_db", user="postgres", password="Alex2905") as base:
+        with base.cursor() as cur:
+            cur.execute("""
+            DROP TABLE Phone_Number;
+            DROP TABLE Information;
+            """)
+            cur.execute("""
+            CREATE TABLE IF NOT EXISTS Information(
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(40),
+                surname VARCHAR(80),
+                mail VARCHAR(128)
+            );
+            """)
+            cur.execute("""
+            CREATE TABLE IF NOT EXISTS Phone_Number(
+                person_id BIGINT  references Information(id),
+                Phone_number BIGINT UNIQUE
+                );
+            """)
+            base.commit()
+            cur.execute("""
+            SELECT * FROM Information""")
+            print('fetchall', cur.fetchall())
+#create_db()
+
+def new_client(name, surname, mail):
+    with psycopg2.connect(database="my_db", user="postgres", password="Alex2905") as base:
+        with base.cursor() as cur:
+            cur.execute("""
+            INSERT INTO Information(name, surname, mail) VALUES(%s,%s,%s);
+            """, (name, surname, mail))
+            base.commit()
+            cur.execute("""
+            SELECT * FROM Information""")
+            print('fetchall', cur.fetchall())
+#new_client("Name", "Surname", "Mail@GMAIL.COM")
+
+def phone_add(user_id, phone_number):
+    with psycopg2.connect(database="my_db", user="postgres", password="Alex2905") as base:
+        with base.cursor() as cur:
+            cur.execute("""
+            INSERT INTO Phone_Number(person_id, Phone_number) VALUES(%s,%s);
+            """, (user_id, phone_number))
+            base.commit()
+            cur.execute("""
+            SELECT * FROM Phone_Number""")
+            print('fetchall', cur.fetchall())
+#phone_add(1 , 79739467408)
+
+def delete_phone(id):
+    with psycopg2.connect(database="my_db", user="postgres", password="Alex2905") as base:
+        with base.cursor() as cur:
+            cur.execute("""
+            DELETE FROM Phone_Number WHERE person_id=%s;
+            """, (id,))
+            cur.execute("""
+            SELECT * FROM Phone_Number;""")
+            print('fetchall', cur.fetchall())
+#delete_phone(2)
+
+def delete_user(id):
+    with psycopg2.connect(database="my_db", user="postgres", password="Alex2905") as base:
+        with base.cursor() as cur:
+            cur.execute("""
+            DELETE FROM Phone_Number WHERE person_id=%s;
+            """, (id,))
+            cur.execute("""
+            DELETE FROM Information WHERE id=%s;
+            """, (id,))
+
+def find_user(characteristics):
+    """
+    1 - поиск клиента  по имени
+    2 - поиск клиента по фамилии
+    3 - поиск клиента по email-у
+    4 - поиск клиента по номеру телефона
+    """
+    with psycopg2.connect(database="my_db", user="postgres", password="Alex2905") as base:
+        with base.cursor() as cur:
+            if characteristics == 1:
+                name = input("Введите имя пользователя: ")
+                cur.execute("""
+                SELECT id, name, surname, mail  FROM Information WHERE name=%s;
+                """, (name,))
+                print(cur.fetchall())
+            elif characteristics == 2:
+                surname = input("Введите фамилию пользователя: ")
+                cur.execute("""
+                SELECT id, name, surname, mail  FROM Information WHERE surname=%s;
+                """, (surname,))
+                print(cur.fetchall())
+            elif characteristics == 3:
+                mail = input("Введите email пользователя: ")
+                cur.execute("""
+                SELECT id, name, surname, mail  FROM Information WHERE mail=%s;
+                """, (mail,))
+                print(cur.fetchall())
+            elif characteristics == 4:
+                phone = input("Введите номер телефона пользователя: ")
+                cur.execute("""
+                SELECT id, name, surname, mail, Phone_number FROM Information, Phone_Number 
+                WHERE id = person_id and Phone_number = %s;
+                """, (phone,))
+                print(cur.fetchall())
+#find_user(4)
+
+def change_user(id, characteristics):
+    """
+    characteristics = 1 - ИЗМЕНЕНИЕ ИМЕНИ КЛИЕНТА
+    characteristics = 2 - ИЗМЕНЕНИЕ ФАМИЛИИ КЛИЕНТА
+    characteristics = 3 - ИЗМЕНЕНИЕ EMAIL КЛИЕНТА
+    characteristics = 4 - ИЗМЕНЕНИЕ НОМЕРА ТЕЛЕФОНА КЛИЕНТА
+    """
+    with psycopg2.connect(database="my_db", user="postgres", password="Alex2905") as base:
+        with base.cursor() as cur:
+            if characteristics == 1:
+                name = input(f'Введите новое имя клиента (id={id}):')
+                cur.execute("""
+                UPDATE Information SET name=%s WHERE id=%s;
+                """, (name, id))
+                cur.execute("""
+                SELECT * FROM Information""")
+                print('fetchall', cur.fetchall())
+            elif characteristics == 2:
+                surname = input(f'Введите новую фамилию клиента (id={id}):')
+                cur.execute("""
+                UPDATE Information SET surname=%s WHERE id=%s;
+                """, (surname, id))
+                cur.execute("""
+                SELECT * FROM Information""")
+                print('fetchall', cur.fetchall())
+            elif characteristics == 3:
+                mail = input(f'Введите новый EMAIL клиента (id={id}):')
+                cur.execute("""
+                UPDATE Information SET mail=%s WHERE id=%s;
+                """, (mail, id))
+                cur.execute("""
+                SELECT * FROM Information""")
+                print('fetchall', cur.fetchall())
+            elif characteristics == 4:
+                phone_number = input(f'Введите новый номер телефона клиента (id={id}):')
+                cur.execute("""
+                DELETE FROM Phone_Number WHERE person_id=%s;
+                """, (id,))
+                cur.execute("""
+                INSERT INTO Phone_Number(person_id, Phone_number) VALUES(%s,%s);
+                """, (id, phone_number))
+                cur.execute("""
+                SELECT * FROM Phone_Number""")
+                print('fetchall', cur.fetchall())
+change_user(1, 4)
+
